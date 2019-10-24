@@ -6,8 +6,8 @@
 # preprocessing CMU CERT r.42 dataset
 #     : generate user based event log files from event-based files 
 
-data_dir = '/home/minkcho/cert-data/r4.2/'
-to_dir = '/export/data/cert-data/processed/4.2/'
+data_dir = './cert_data/r4.2/'
+to_dir = './processed_data/r4.2/'
 
 
 # In[22]:
@@ -18,14 +18,13 @@ import numpy as np
 import pandas as pd
 
 log = pd.read_csv( data_dir + 'logon.csv', sep=',')
-
 users = sorted(log['user'].unique())
 
 no = 0
 user_dict = pd.DataFrame(users, index=range(0,len(users)),columns=['user'])
 user_dict.to_csv(to_dir + 'dictionary.csv', sep=',')
 
-answer = pd.read_csv('/home/minkcho/cert-data/answers/answer_r4.2_all.csv', sep=',')
+answer = pd.read_csv('./cert_data/answers/answer_r4.2_all_org.csv', sep=',')
 answer['userid'] = answer['user'].apply(lambda x: user_dict.index[user_dict['user'] == x][0])
 answer.to_csv(to_dir + 'answer_r4.2_all.csv',index=False)
 
@@ -127,6 +126,7 @@ df.to_csv(to_dir + 'pre01_' + filename, sep=',', index=False)
 # run split into users : write to shell script (check peruser.sh)
 import numpy as np
 import pandas as pd
+import os
 
 log = pd.read_csv(to_dir + 'dictionary.csv', sep=',')
 users = log['user']
@@ -141,15 +141,4 @@ for user in users:
     
 print ('sed -i \'1s/^/user,date,activity\\n/\' f_u*.csv')
 
-
-# In[ ]:
-
-
-# run peruser.sh at /home/minkcho/src/InsiderThreat/
-# important
-# we need to add below at peruser.sh
-#
-# sed -i '1i\
-# user,date,activity
-# ' f_u*.csv
-#
+# please cd $to_dir and run peruser.sh 

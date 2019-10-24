@@ -8,8 +8,8 @@
 import pandas as pd
 import numpy as np
 #import matplotlib.pyplot as plt
-data_dir = '/export/data/cert-data/processed/4.2/tmp_user/'
-to_dir   = '/export/data/cert-data/processed/4.2/user/'
+data_dir = './processed_data/r4.2/tmp_user/'
+to_dir   = './processed_data/r4.2/user/'
 
 for i in range(0,1000,1):
     file_name = 'f_u{:03}.csv'.format(i)
@@ -28,19 +28,21 @@ for i in range(0,1000,1):
     for date in rng:
         temp = user.loc[((date <= user['date']) & (user['date'] < date + 1))]
         temp = pd.DataFrame(temp)
+        temp['user'] = temp['user'].astype(str)
+        temp['activity'] = temp['activity'].astype(str)
 
         if not temp.empty:
             length = len(temp)
 
             #print(date,"is not empty")
             #각 행위를 편의상 숫자로 표현
-            temp.loc[temp.activity == 'Logon',      'activity'] = 1
-            temp.loc[temp.activity == 'http',       'activity'] = 2
-            temp.loc[temp.activity == 'email',      'activity'] = 3
-            temp.loc[temp.activity == 'file',       'activity'] = 4
-            temp.loc[temp.activity == 'Connect',    'activity'] = 5
-            temp.loc[temp.activity == 'Disconnect', 'activity'] = 6
-            temp.loc[temp.activity == 'Logoff',     'activity'] = 7
+            temp.loc[(temp.activity == 'Logon'),      'activity'] = 1
+            temp.loc[(temp.activity == 'http'),       'activity'] = 2
+            temp.loc[(temp.activity == 'email'),      'activity'] = 3
+            temp.loc[(temp.activity == 'file'),       'activity'] = 4
+            temp.loc[(temp.activity == 'Connect'),    'activity'] = 5
+            temp.loc[(temp.activity == 'Disconnect'), 'activity'] = 6
+            temp.loc[(temp.activity == 'Logoff'),     'activity'] = 7
 
             #하루의 작업 시퀀스를 나타내기 위한 처리 날짜, 시퀀스 길이, 시퀀스 순으로 정렬
             #user, date, activity => activity rows => (transpose) => [activity list] + [date, length] 
@@ -54,7 +56,7 @@ for i in range(0,1000,1):
 
             #print(dayact)
             #시퀀스를 붙여나감
-            total = pd.concat([total, dayact])
+            total = pd.concat([total, dayact], sort=True)
 
     total.to_csv(to_dir + 'daily_f_u{:03}.csv'.format(i), sep=',', float_format='%.f')
     print("Done. user {}".format(i))

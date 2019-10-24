@@ -11,8 +11,8 @@ import numpy as np
 import tensorflow as tf
 import sys
 
-start_idx = 1
-bulk = 1
+start_idx = 0
+bulk = 1000
 if len(sys.argv) == 3:
     start_idx = int(sys.argv[1])
     bulk = int(sys.argv[2])
@@ -21,7 +21,7 @@ if len(sys.argv) == 3:
 # set the daily pattern size 
 n_size = 4
 seq_length = n_size
-data_dir = '/export/data/cert-data/processed/4.2/'
+data_dir = './processed_data/r4.2/'
 flag_additional_loss = True
 
 
@@ -41,7 +41,7 @@ def get_patterns(data_set, size):
     patterns = np.random.rand(1, n_size)
     for i in range(0,len(data_set)):
         sequence = data_set[i]
-        sequence = np.array(sequence[~np.isnan(sequence)])
+        sequence = np.array(sequence[~pd.isnull(sequence)])
 
         if len(sequence) <= size:
             print('extend sequence')
@@ -109,12 +109,8 @@ with tf.Graph().as_default():
     prev_mem = tf.zeros((batch_size, memory_dim))
 
     cell = tf.nn.rnn_cell.GRUCell(memory_dim)
-    # cell = tf.nn.rnn_cell.MultiRNNCell([tf.nn.rnn_cell.GRUCell(memory_dim) for _ in range(2)])
-
-    #dec_outputs, dec_memory = tf.contrib.legacy_seq2seq.embedding_rnn_seq2seq(enc_inp, dec_inp, cell, vocab_size, vocab_size,
-    #                                                                      embedding_size=100)
     dec_outputs, dec_memory = tf.contrib.legacy_seq2seq.embedding_attention_seq2seq(enc_inp, dec_inp, cell, vocab_size, vocab_size,
-                                                                  embedding_size=100, feed_previous=True, num_heads=3)
+                                                                  embedding_size=100, feed_previous=True, num_heads=1)
 
     loss = tf.contrib.legacy_seq2seq.sequence_loss(dec_outputs, labels, weights, vocab_size)
     learning_rate = 0.05
@@ -122,7 +118,6 @@ with tf.Graph().as_default():
     optimizer = tf.train.MomentumOptimizer(learning_rate, momentum)
     train_op = optimizer.minimize(loss)
 
-    # saver = tf.train.Saver(max_to_keep=1000)
     anomalies = np.array([['name', 'date', 'loss']])
     userList = pd.read_csv(data_dir + 'dictionary.csv', sep=',')
     userList = userList['user']
@@ -177,7 +172,6 @@ with tf.Graph().as_default():
                     print("step: {0}  loss: {1:.8f}".format(t, loss_train))
         
             print("user {0}  trained.  loss: {1:.8f}".format(n, loss_train))
-            #save_path = saver.save(sess, '/home/minkcho/src/InsiderThreat/saver/saver_' + file + '.ckpt')
             loss_arr = [[loss_train]]
             
             # phase2 : testing
@@ -203,7 +197,6 @@ with tf.Graph().as_default():
                     additional_loss = 0.
                     std_score = np.zeros(8)
                     for event_idx in range(1,8):
-                        # std_score[event_idx] = np.rint(len(s[s == event_idx]) - m_mean[event_idx]) / m_std[event_idx]
                         std_score[event_idx] = (len(s[s == event_idx]) - m_mean[event_idx]) / m_std[event_idx]
                         if(std_score[event_idx] >= 2.):
                             additional_loss = additional_loss + (std_score[event_idx] * 0.1)
@@ -244,7 +237,6 @@ with tf.Graph().as_default():
 
         df_loss = pd.DataFrame({'y':ans_arr, 'loss':loss_arr})
         df_loss.to_csv('loss/{:03}.csv'.format(n),sep=',',index=False)
-        # np.savetxt('loss/{:03}.csv'.format(n), [p for p in zip(ans_arr, loss_arr)], delimiter=',')
 
 
         total_true_positive = total_true_positive + user_true_positive
